@@ -9,7 +9,7 @@ const Add = ({ url }) => {
   const [data, setData] = useState({
     name: '',
     description: '',
-    category: 'Salad',
+    category: 'Bording',
     price: ''
   });
   const [errors, setErrors] = useState({});
@@ -53,7 +53,7 @@ const Add = ({ url }) => {
         setData({
           name: '',
           description: '',
-          category: 'Salad',
+          category: 'Bording',
           price: ''
         });
         setImage(false);
@@ -94,13 +94,13 @@ const Add = ({ url }) => {
         <div className="add-category-price">
           <p>Product category</p>
           <select name="category" id="category" onChange={onChangeHandler} value={data.category}> 
-            <option value="Salad">Salad</option>
-            <option value="Rolls">Rolls</option>
-            <option value="Deserts">Deserts</option>
-            <option value="Rice">Rice</option>
-            <option value="Kottu">Kottu</option>
-            <option value="Pasta">Pasta</option>
-            <option value="Noodles">Noodles</option>
+            <option value="Bording">Bording</option>
+            <option value="Taxies">Taxies</option>
+            <option value="Medicare">Medicare</option>
+            <option value="Food">Food</option>
+            <option value="Renting">Renting</option>
+            <option value="Skill Sharing">Skill Sharing</option>
+        
           </select>
         </div>
 
@@ -117,3 +117,4 @@ const Add = ({ url }) => {
 };
 
 export default Add;
+

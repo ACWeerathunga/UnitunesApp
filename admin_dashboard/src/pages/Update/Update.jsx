@@ -5,13 +5,13 @@ import { toast } from 'react-toastify';
 import './Update.css';
 
 const categories = [
-    "Salad",
-    "Rolls",
-    "Rice",
-    "Kottu",
-    "Pure Veg",
-    "Pasta",
-    "Noodles"
+    "Bording",
+    "Taxies",
+    "Medicare",
+    "Rental Items",
+    "Skill Sharing",
+    "Food",
+   
 ];
 
 const UpdateProduct = ({ url }) => {
