@@ -8,6 +8,6 @@ const studentSchema = new mongoose.Schema({
  
 })
 
-const studentModel = mongoose.models.student || mongoose.model('Student', userSchema)
+const studentModel = mongoose.models.student || mongoose.model('Student',studentSchema)
 
-export default userModel;
+export default studentModel;
