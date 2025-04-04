@@ -1,119 +1,91 @@
-import Product from '../models/product.js';
-import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid'; 
- 
-// Configure multer for file uploads (handling image uploads)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, './uploads');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
+import {v2 as cloudinary} from "cloudinary"
+import productModel from "../models/productModel.js"
 
-const upload = multer({ storage: storage });
+//add product
+const addProduct =async(req,res)=>{
+    try{
+       const{name,description,price,category,subCategory,sizes,bestseller} =req.body;
 
-// Create a new product
-export const createProduct = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: 'Image file is required' });
+        const image1 = req.files.image1 && req.files.image1[0]
+        const image2 = req.files.image2 && req.files.image2[0]
+        const image3 = req.files.image3 && req.files.image3[0]
+        const image4 = req.files.image4 && req.files.image4[0]
+
+        const images = [image1,image2,image3,image4].filter((item)=> item !==undefined)
+
+        let imagesUrl =await Promise.all(
+            images.map(async (item)=>{
+                let result = await cloudinary.uploader.upload(item.path,{resource_type:'image'});
+                return result.secure_url;
+
+            })
+        )
+       
+
+        const productData = {
+            name,
+            description,
+            price :Number(price),
+            category,
+            subCategory,
+            sizes:JSON.parse(sizes),
+            bestseller:bestseller === "true"?true:false,
+            image:imagesUrl,
+            date:Date.now()
         }
-        const productId = uuidv4();
-        console.log(productId);
-        const product = new Product({
-            productId,
-            name: req.body.name,
-            description: req.body.description,
-            price: req.body.price,
-            category: req.body.category,
-            image: req.file.filename
-        });
+        console.log(productData)
 
-        await product.save();
-        res.status(201).json({ success: true, message: 'Product created successfully', product });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Failed to create product' });
+        const product =new productModel(productData)
+        await product.save()
+
+        res.json({success:true,message:"Product Added Successfully"})
+
+
     }
-};
-
-// Get all products
-export const getAllProducts = async (req, res) => {
-    try {
-        const products = await Product.find();
-        res.status(200).json({ success: true, products });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Failed to fetch products' });
+    catch(error){
+        
+        res.json({success:false,message:error.message})
     }
-};
 
-// Get a product by ID
-export const getProductById = async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.productId);
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Product not found' });
-        }
-        res.status(200).json({ success: true, product });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Failed to fetch product' });
+}
+
+//list product
+const listProducts =async(req,res)=>{
+    try{
+        const products =await productModel.find({})
+        res.json({success:true,products})
     }
-};
-
-// Update a product
-export const updateProduct = async (req, res) => {
-    try {
-        let updateData = {
-            name: req.body.name,
-            category: req.body.category,
-            price: req.body.price
-        };
-
-        // Only update the image if a new one was uploaded
-        if (req.file) {
-            updateData.image = req.file.filename;
-        }
-
-        const product = await Product.findByIdAndUpdate(
-            req.params.productId,
-            updateData,
-            { new: true }
-        );
-
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Product not found' });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: 'Product updated successfully',
-            product
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Failed to update product' });
+    catch(error){
+        console.log(error)
+        res.json({success:false,message:error.message})
     }
-};
 
+}
 
-// Delete a product
-export const deleteProduct = async (req, res) => {
-    try {
-        const product = await Product.findByIdAndDelete(req.params.productId);
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Product not found' });
-        }
-
-        res.status(200).json({ success: true, message: 'Product deleted successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Failed to delete product' });
+//function remove Product
+const removeProduct =async(req,res)=>{
+    try{
+        await  productModel.findByIdAndDelete(req.body.id)
+        res.json({success:true,message:"Product Deleted Successfully"})
+        
+    }catch(error){
+        console.log(error)
+        res.json({success:false,message:error.message})
     }
-};
 
-// Export upload middleware
-export { upload };
+}
+
+//single product info
+const singleProduct =async(req,res)=>{
+    try{
+        const {productId} =req.body
+        const product =await productModel.findById(productId)
+        res.json({success:true,product})
+    }catch(error){
+        console.log(error)
+        res.json({success:false,message:error.message})
+    }
+
+}
+
+export{singleProduct,removeProduct,listProducts,addProduct}
