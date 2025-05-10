@@ -1,75 +1,168 @@
-import User from "../models/user.js";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import validator from 'validator';
+import studentModel from '../models/StudentModel.js';
+import serviceProviderModel from '../models/ServiceProviderModel.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
-export function saveUsers(req, res) {
-    const hashPassword = bcrypt.hashSync(req.body.password, 10);
-    const user = new User({
-        email: req.body.email,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        password: hashPassword,
-        
-    })
-
-    user.save().then(
-        () => {
-            res.json({
-                message: "User saved"
-            });
-        }
-    ).catch(
-        () => {
-            res.status(500).json({
-                message: "Error"
-            });
-        }
-    )
- 
+const createToken=(id)=>{
+    return jwt.sign({id},process.env.JWT_SECRET)
 
 }
+//login
+const loginStudent =async(req, res) => {
+    try{
+        const{email,password} =req.body;
+        const user =await studentModel.findOne({email});
 
-export function loginUser(req, res) {
-    const email = req.body.email;
-    const password = req.body.password;
-
-    User.findOne({  
-        email: email
-    }).then((user) => {
-        if(user===null){
-            res.status(404).json({
-                message: "User not found"
-            });
+        if(!user){
+            return res.json({success:false,message:"User Not Found"})
         }
-            else{
-                const isPasswordCorrect = bcrypt.compareSync(password, user.password);
-                if(isPasswordCorrect){
+        const isMatch =await bcrypt.compare(password,user.password);
+        if(isMatch){
+            const token =createToken(user._id)
+             res.json({success:true,token})
+        }
+        else{
+            res.json({success:false,message:"Incorrect Password"})
+        }
 
-                    const userData = {
-                        email: user.email,
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        role: user.role,
-                        phone: user.phone,
-                        isDisabled: user.isDisabled,
-                        isEmailVerified: user.isEmailVerified
-                    }
+    }catch(error){
+        console.log(error);
+        res.json({success:false,message:error.message})
 
-                    const token = jwt.sign(userData,"random456")
-                    res.json({
-                        message: "Login successful",
-                        token: token
-                    })
+    }
 
+}
+//register user
+const registerStudent =async(req, res) => {
 
-          
-                }
-                else{
-                    res.status(403).json({
-                        message: "Password incorrect"
-                    })
-                }
-            }
+    try{
+        const {name,email,password} =req.body;
+
+        const exists =await studentModel.findOne({email});
+        if(exists){
+            return res.json({success:false,message:"User already registered"})
+        }
+
+        if(!validator.isEmail(email)){
+            return res.json({success:false,message:"Please Enter Your Valid Email"})
+        }
+        if(password.length<8){
+            return res.json({success:false,message:"Enter a strong Password "})
+        }
+
+        //hashing
+        const salt =await bcrypt.genSalt(10);
+        const hashedPassword =await bcrypt.hash(password,salt);
+
+        const newUser =new studentModel({
+            name,
+            email,
+            password:hashedPassword
+        })
+        const user = await newUser.save();
+        const token = createToken(user._id);
+        res.json({success:true,token
         })
 
+
+    }catch(error){
+        console.log(error);
+        res.json({success:false,messge:error.message})
+
+    }
+
+
 }
+
+//login
+const loginServiceProvider =async(req, res) => {
+    try{
+        const{email,password} =req.body;
+        const user =await studentModel.findOne({email});
+
+        if(!user){
+            return res.json({success:false,message:"User Not Found"})
+        }
+        const isMatch =await bcrypt.compare(password,user.password);
+        if(isMatch){
+            const token =createToken(user._id)
+             res.json({success:true,token})
+        }
+        else{
+            res.json({success:false,message:"Incorrect Password"})
+        }
+
+    }catch(error){
+        console.log(error);
+        res.json({success:false,message:error.message})
+
+    }
+
+}
+//register user
+const registerServiceProvder =async(req, res) => {
+
+    try{
+        const {name,email,password} =req.body;
+
+        const exists =await serviceProviderModel.findOne({email});
+        if(exists){
+            return res.json({success:false,message:"User already registered"})
+        }
+
+        if(!validator.isEmail(email)){
+            return res.json({success:false,message:"Please Enter Your Valid Email"})
+        }
+        if(password.length<8){
+            return res.json({success:false,message:"Enter a strong Password "})
+        }
+
+        //hashing
+        const salt =await bcrypt.genSalt(10);
+        const hashedPassword =await bcrypt.hash(password,salt);
+
+        const newUser =new serviceProviderModel({
+            name,
+            email,
+            password:hashedPassword
+        })
+        const user = await newUser.save();
+        const token = createToken(user._id);
+        res.json({success:true,token
+        })
+
+
+    }catch(error){
+        console.log(error);
+        res.json({success:false,messge:error.message})
+
+    }
+
+
+}
+
+//route admin login
+const adminLogin =async(req, res) => {
+    try{
+        const{email,password} =req.body
+
+        if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD){
+
+            const token=jwt.sign(email+password,process.env.JWT_SECRET);
+            res.json({success:true,token})
+            
+        }else{
+            res.json({success:false,message:"Invalid Credentials"})
+        }
+
+    }catch(error){
+        console.log(error); 
+        res.json({success:false,message:error.message})
+    }
+
+
+}
+
+
+export { loginStudent, registerStudent, adminLogin,loginServiceProvider, registerServiceProvder };
